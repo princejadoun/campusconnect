@@ -45,12 +45,13 @@ def create_app(test_config: dict | None = None) -> Flask:
     # Register Member 1 Blueprint (Authentication & Profile)
     app.register_blueprint(auth_bp)
 
+    # Register Member 2 Blueprint (Event Management)
+    from routes.events import events_bp
+    app.register_blueprint(events_bp)
+
     # -------------------------------------------------------------------------
     # TEAM HEAD INTEGRATION: Register teammate Blueprints below as PRs are merged
     # -------------------------------------------------------------------------
-    # from routes.events import events_bp
-    # app.register_blueprint(events_bp)
-    #
     # from routes.attendance import attendance_bp
     # app.register_blueprint(attendance_bp)
     #

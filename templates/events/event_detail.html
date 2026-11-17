@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} - CampusConnect{% endblock %}
+
+{% block content %}
+{# Breadcrumb Navigation #}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('auth.index') }}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('events.browse') }}">Events</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+    {# Left Main Column: Event Details & Description #}
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                {# Header Badges #}
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    {% if event.seats_remaining() > 0 and now <= event.reg_deadline %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Registration Open</span>
+                    {% elif now > event.reg_deadline %}
+                        <span class="badge bg-secondary"><i class="bi bi-clock-history me-1"></i>Registration Closed</span>
+                    {% else %}
+                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Fully Booked</span>
+                    {% endif %}
+
+                    {% if is_registered %}
+                        <span class="badge bg-primary"><i class="bi bi-award-fill me-1"></i>You're Registered</span>
+                    {% endif %}
+                </div>
+
+                {# Event Title & Organizer #}
+                <h2 class="fw-bold text-dark mb-2">{{ event.title }}</h2>
+                <p class="text-muted small mb-4">
+                    <i class="bi bi-person-fill me-1"></i>Organized by <strong>{{ event.creator.name }}</strong>
+                    &bull; Posted on {{ event.created_at.strftime('%d %B %Y') }}
+                </p>
+
+                {# Key Details Quick Cards #}
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <div class="text-primary fw-semibold small mb-1">
+                                <i class="bi bi-calendar-event me-1"></i> Event Date &amp; Time
+                            </div>
+                            <div class="fw-bold">{{ event.event_date.strftime('%A, %d %B %Y') }}</div>
+                            <div class="small text-muted">{{ event.event_date.strftime('%I:%M %p') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <div class="text-danger fw-semibold small mb-1">
+                                <i class="bi bi-geo-alt-fill me-1"></i> Venue / Location
+                            </div>
+                            <div class="fw-bold">{{ event.venue }}</div>
+                            <div class="small text-muted">Campus Ground / Block</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <div class="text-warning-emphasis fw-semibold small mb-1">
+                                <i class="bi bi-alarm-fill me-1"></i> Registration Deadline
+                            </div>
+                            <div class="fw-bold">{{ event.reg_deadline.strftime('%d %b %Y') }}</div>
+                            <div class="small text-muted">{{ event.reg_deadline.strftime('%I:%M %p') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <div class="text-info-emphasis fw-semibold small mb-1">
+                                <i class="bi bi-people-fill me-1"></i> Capacity &amp; Seats
+                            </div>
+                            <div class="fw-bold">{{ event.seats_remaining() }} available</div>
+                            <div class="small text-muted">{{ event.registered_count() }} / {{ event.max_seats }} booked</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Event Full Description #}
+                <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>About this Event</h5>
+                <div class="text-secondary lh-lg" style="white-space: pre-line;">
+                    {{ event.description }}
+                </div>
+            </div>
+        </div>
+
+        {# Administrator Control Panel & Attendee Roster #}
+        {% if current_user.is_authenticated and current_user.is_admin() %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-shield-lock-fill text-warning me-2"></i>Admin Management
+                    </h5>
+                    {# Modal Trigger for Delete #}
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteEventModal">
+                        <i class="bi bi-trash me-1"></i> Delete Event
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Registered Students ({{ event.registrations|length }})</h6>
+                    </div>
+
+                    {% if event.registrations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle small mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Student Name</th>
+                                        <th>Email</th>
+                                        <th>Registered At</th>
+                                        <th>Attendance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reg in event.registrations %}
+                                        <tr>
+                                            <td>{{ loop.index }}</td>
+                                            <td class="fw-semibold">{{ reg.student.name }}</td>
+                                            <td class="text-muted">{{ reg.student.email }}</td>
+                                            <td>{{ reg.registered_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                                            <td>
+                                                {% if reg.attended %}
+                                                    <span class="badge bg-success">Attended</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark">Not Checked In</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted small mb-0">No students have registered for this event yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Delete Confirmation Modal #}
+            <div class="modal fade" id="deleteEventModal" tabindex="-1" aria-labelledby="deleteEventModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title text-danger fw-bold" id="deleteEventModalLabel">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Event
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to permanently delete <strong>"{{ event.title }}"</strong>?
+                            <br><br>
+                            <span class="text-muted small">
+                                This will remove the event and all associated student registrations and attendance records.
+                            </span>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form method="POST" action="{{ url_for('events.delete_event', event_id=event.id) }}">
+                                <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {# Right Sidebar: Registration Card & Seat Progress #}
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm sticky-top" style="top: 2rem;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Registration</h5>
+
+                {# Real-time Seat Progress Indicator #}
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                        <span class="text-muted small">Seats Availability</span>
+                        <span class="fw-bold text-primary">{{ event.seats_remaining() }} remaining</span>
+                    </div>
+                    {% set percent = (((event.registered_count() / event.max_seats) * 100)|round|int) if event.max_seats > 0 else 0 %}
+                    <div class="progress mb-2" style="height: 10px;">
+                        <div 
+                            class="progress-bar {% if percent >= 100 %}bg-danger{% elif percent >= 80 %}bg-warning{% else %}bg-primary{% endif %}" 
+                            role="progressbar" 
+                            style="width: {{ [percent, 100]|min }}%;"
+                        ></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>{{ event.registered_count() }} taken</span>
+                        <span>{{ event.max_seats }} total capacity</span>
+                    </div>
+                </div>
+
+                {# Registration Deadline Notice #}
+                {% if now > event.reg_deadline %}
+                    <div class="alert alert-secondary small mb-3">
+                        <i class="bi bi-clock-history me-1"></i> Registration deadline has passed.
+                    </div>
+                {% else %}
+                    <div class="alert alert-info small mb-3">
+                        <i class="bi bi-hourglass-split me-1"></i> Closes on {{ event.reg_deadline.strftime('%d %b %Y, %I:%M %p') }}
+                    </div>
+                {% endif %}
+
+                <hr>
+
+                {# Registration Actions #}
+                {% if not current_user.is_authenticated %}
+                    {# Unauthenticated Visitor State #}
+                    <div class="text-center py-2">
+                        <p class="text-muted small mb-3">Please log in to your student account to register for this event.</p>
+                        <a href="{{ url_for('auth.login', next=url_for('events.event_detail', event_id=event.id)) }}" class="btn btn-primary w-100 mb-2">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Log In to Register
+                        </a>
+                        <small class="text-muted">
+                            New here? <a href="{{ url_for('auth.register') }}">Create an account</a>
+                        </small>
+                    </div>
+
+                {% elif is_registered %}
+                    {# Authenticated & Already Registered State #}
+                    <div class="text-center py-2">
+                        <div class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2.5rem;"></i>
+                            <h6 class="fw-bold mt-2 mb-1 text-success">You're Registered!</h6>
+                            <p class="text-muted small mb-0">Registered on {{ user_registration.registered_at.strftime('%d %b %Y') }}</p>
+                        </div>
+
+                        {% if endpoint_exists('attendance.my_passes') %}
+                            <a href="{{ url_for('attendance.my_passes') }}" class="btn btn-success w-100 mb-2">
+                                <i class="bi bi-qr-code me-1"></i> View Entry QR Pass
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-success w-100 mb-2">
+                                <i class="bi bi-person-circle me-1"></i> View in Dashboard
+                            </a>
+                        {% endif %}
+
+                        <div class="p-2 bg-light rounded text-muted small mt-2">
+                            Pass token: <code class="text-dark">{{ user_registration.qr_token[:8] }}...</code>
+                        </div>
+                    </div>
+
+                {% else %}
+                    {# Authenticated & Not Registered State #}
+                    {% if now > event.reg_deadline %}
+                        <button class="btn btn-secondary w-100 py-2" disabled>
+                            <i class="bi bi-lock-fill me-1"></i> Registration Closed
+                        </button>
+                    {% elif event.seats_remaining() <= 0 %}
+                        <button class="btn btn-danger w-100 py-2" disabled>
+                            <i class="bi bi-x-circle me-1"></i> Event Fully Booked
+                        </button>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('events.register_event', event_id=event.id) }}">
+                            <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">
+                                <i class="bi bi-ticket-perforated-fill me-1"></i> Register for Event
+                            </button>
+                        </form>
+                        <small class="text-muted d-block text-center mt-2">
+                            <i class="bi bi-shield-check text-success me-1"></i> Free entry &bull; Instant confirmation
+                        </small>
+                    {% endif %}
+                {% endif %}
+
+                <div class="mt-4 pt-3 border-top text-center">
+                    <a href="{{ url_for('events.browse') }}" class="text-decoration-none small text-muted">
+                        <i class="bi bi-arrow-left me-1"></i> Back to all events
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Create Event - CampusConnect{% endblock %}
+
+{% block content %}
+{# Breadcrumb Navigation #}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('auth.index') }}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('events.browse') }}">Events</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Create Event</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-bottom">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-calendar-plus text-primary fs-3 me-3"></i>
+                    <div>
+                        <h4 class="fw-bold mb-0">Create New Campus Event</h4>
+                        <small class="text-muted">Set up an event, configure capacity limits, and open student registration.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('events.create_event') }}">
+                    {# Event Title #}
+                    <div class="mb-3">
+                        <label for="title" class="form-label fw-semibold">
+                            Event Title <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="title" 
+                            name="title" 
+                            maxlength="150" 
+                            required 
+                            placeholder="e.g., Annual Hackathon 2026: AI & Systems"
+                            value="{{ form_data.get('title', '') }}"
+                        >
+                        <div class="form-text">Choose a descriptive and engaging title (max 150 characters).</div>
+                    </div>
+
+                    {# Venue / Location #}
+                    <div class="mb-3">
+                        <label for="venue" class="form-label fw-semibold">
+                            Venue / Location <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-geo-alt"></i></span>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="venue" 
+                                name="venue" 
+                                maxlength="150" 
+                                required 
+                                placeholder="e.g., Main Auditorium, Block A or Computer Lab 4"
+                                value="{{ form_data.get('venue', '') }}"
+                            >
+                        </div>
+                        <div class="form-text">Provide the exact campus location or lecture hall.</div>
+                    </div>
+
+                    {# Event Description #}
+                    <div class="mb-3">
+                        <label for="description" class="form-label fw-semibold">
+                            Event Description <span class="text-danger">*</span>
+                        </label>
+                        <textarea 
+                            class="form-control" 
+                            id="description" 
+                            name="description" 
+                            rows="5" 
+                            required 
+                            placeholder="Describe what the event is about, prerequisites, prizes, guest speakers, and schedule..."
+                        >{{ form_data.get('description', '') }}</textarea>
+                        <div class="form-text">Provide full details so students know what to expect and prepare.</div>
+                    </div>
+
+                    {# Dates & Capacity Row #}
+                    <div class="row g-3 mb-4">
+                        {# Event Start Date & Time #}
+                        <div class="col-md-4">
+                            <label for="event_date" class="form-label fw-semibold">
+                                Event Date &amp; Time <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                class="form-control" 
+                                id="event_date" 
+                                name="event_date" 
+                                required 
+                                value="{{ form_data.get('event_date', '') }}"
+                            >
+                            <div class="form-text small">When the event begins.</div>
+                        </div>
+
+                        {# Registration Deadline #}
+                        <div class="col-md-4">
+                            <label for="reg_deadline" class="form-label fw-semibold">
+                                Registration Deadline <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                class="form-control" 
+                                id="reg_deadline" 
+                                name="reg_deadline" 
+                                required 
+                                value="{{ form_data.get('reg_deadline', '') }}"
+                            >
+                            <div class="form-text small">Must be before the event date.</div>
+                        </div>
+
+                        {# Total Capacity / Max Seats #}
+                        <div class="col-md-4">
+                            <label for="max_seats" class="form-label fw-semibold">
+                                Maximum Seats <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-people"></i></span>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="max_seats" 
+                                    name="max_seats" 
+                                    min="1" 
+                                    required 
+                                    value="{{ form_data.get('max_seats', '100') }}"
+                                >
+                            </div>
+                            <div class="form-text small">Total student capacity.</div>
+                        </div>
+                    </div>
+
+                    {# Informational Alert Box #}
+                    <div class="alert alert-light border small text-muted mb-4">
+                        <i class="bi bi-info-circle-fill text-primary me-2"></i>
+                        Once created, the event will instantly appear on the <strong>Browse Events</strong> page.
+                        Students will be able to register until either the seats are filled or the registration deadline passes.
+                    </div>
+
+                    {# Action Buttons #}
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('events.browse') }}" class="btn btn-outline-secondary px-4">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-check-circle-fill me-1"></i> Publish Event
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
